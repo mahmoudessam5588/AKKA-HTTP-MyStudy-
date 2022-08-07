@@ -2,6 +2,8 @@ package PlayGround
 
 import akka.stream.Materializer
 
+import scala.concurrent.Future
+
 object playGround extends App{
   import akka.actor.ActorSystem
   import akka.http.scaladsl.Http
@@ -28,7 +30,8 @@ object playGround extends App{
         ))
       }
 
-    val bindingFuture = Http().newServerAt("localhost", 8080).bind(simpleRoute)
+    val bindingFuture: Future[Http.ServerBinding] =
+      Http().newServerAt("localhost", 8080).bind(simpleRoute)
     // wait for a new line, then terminate the server
     StdIn.readLine()
     bindingFuture

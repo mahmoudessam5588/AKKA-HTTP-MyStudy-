@@ -3,7 +3,9 @@ package HighLevelServerApi
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpRequest, StatusCodes}
+import akka.http.scaladsl.server.Route
 import akka.stream.Materializer
+
 import scala.concurrent.ExecutionContextExecutor
 //Objectives:
 //Familiarize With All Most Popular Directives
@@ -112,11 +114,59 @@ object DirectivesBreakDown extends App {
   //console Extracted ID 5
   //------------------------------------------------------------------
   //extraction the request from request context
-  val extractRequestControl =
-  path("controlled"){
-    extractRequest{//there are  a lot of extract methods provided
-      (_:HttpRequest) => complete(StatusCodes.OK)
+  val extractRequestControl = {
+    path("controlled") {
+      extractRequest { //there are  a lot of extract methods provided
+        (_: HttpRequest) => complete(StatusCodes.OK)
+      }
     }
   }
+  //-----------------------------------------------------------------
+  /*Type Three Composite Directives */
+  val simpleNestedRoute: Unit = {
+    path("api" / "item") {
+      get {
+        complete(StatusCodes.OK)
+      }
+    }
+
+    val simpleCompositeNestedRoute = (path("api" / "item") & get) {
+      complete(StatusCodes.OK)
+    }
+  }
+  val compactExtractRouteMethod = (path("controlled") & extractRequest & extractLog) {
+    (request, log) =>
+      log.info(s"got the http Request $request")
+      complete(StatusCodes.OK)
+  }
+  //different path same result
+  val dryRoute: Route = (path("about") | path("abouttUs")) {
+    complete(StatusCodes.OK)
+  }
+  //one path one parameter extracting same amount of value
+  val sameValueExtractor: Route =
+    (path(IntNumber) | parameter(Symbol("id").as[Int])) {
+      (id: Int) => complete(StatusCodes.OK)
+    }
+  //----------------------------------------------------------------
+  /*
+    Type four: "actionable" directives
+   */
+
+  val completeOkRoute = complete(StatusCodes.OK)
+
+  val failedRoute =
+    path("notSupported") {
+      failWith(new RuntimeException("Unsupported!")) // completes with HTTP 500
+    }
+
+  val routeWithRejection =
+    path("home") {
+      reject
+    } ~
+      path("index") {
+        completeOkRoute
+      }
+
 }
 
